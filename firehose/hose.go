@@ -141,6 +141,22 @@ var Firehose = &cli.Command{
 									userProfile, err = appbsky.ActorGetProfile(context.TODO(), xrpcc, evt.Repo)
 									if err != nil {
 										fmt.Println(err)
+
+										//try a refresh
+										sess, err := refreshSession(cctx)
+										if err == nil {
+											err = diskutil.WriteStructToDisk(sess, authFile)
+											if err != nil {
+												return err
+											}
+											//reset xrpcc
+											xrpcc, err = cliutil.GetXrpcClient(cctx, true)
+											if err != nil {
+												return err
+											}
+
+										}
+
 									}
 								}
 
@@ -201,4 +217,23 @@ func createSession(cctx *cli.Context) ([]byte, error) {
 	}
 
 	return json.MarshalIndent(ses, "", "  ")
+}
+
+func refreshSession(cctx *cli.Context) ([]byte, error) {
+	xrpcc, err := cliutil.GetXrpcClient(cctx, true)
+	if err != nil {
+		return nil, err
+	}
+
+	a := xrpcc.Auth
+	a.AccessJwt = a.RefreshJwt
+
+	ctx := context.TODO()
+	nauth, err := comatproto.ServerRefreshSession(ctx, xrpcc)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(nauth)
+
 }
