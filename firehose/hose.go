@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os/signal"
+	"path"
 	"strconv"
 	"syscall"
 	"time"
@@ -82,8 +83,6 @@ var Firehose = &cli.Command{
 			return fmt.Errorf("dial failure: %w", err)
 		}
 
-		jsonfmt := cctx.Bool("json")
-
 		fmt.Println("Stream Started", time.Now().Format(time.RFC3339))
 		defer func() {
 			fmt.Println("Stream Exited", time.Now().Format(time.RFC3339))
@@ -121,13 +120,14 @@ var Firehose = &cli.Command{
 							banana := lexutil.LexiconTypeDecoder{
 								Val: rec,
 							}
-							//fmt.Println(banana.Val)
 
 							var pst = appbsky.FeedPost{}
 							b, err := banana.MarshalJSON()
 							if err != nil {
 								fmt.Println(err)
 							}
+
+							//fmt.Println(string(b))
 
 							err = json.Unmarshal(b, &pst)
 							if err != nil {
@@ -160,9 +160,18 @@ var Firehose = &cli.Command{
 									}
 								}
 
+								//Make the URL to link
+
 								//Try to use the display name and follower count if we can get it
 								if userProfile != nil && userProfile.DisplayName != nil && userProfile.FollowersCount != nil {
-									fmt.Println(*userProfile.DisplayName + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + ":" + pst.Text)
+
+									//https://staging.bsky.app/profile/lastnpcalex.com/post/3jtqdpnuptv26
+
+									//fmt.Println(string(b))
+
+									url := "https://staging.bsky.app/profile/" + userProfile.Handle + "/post/" + path.Base(op.Path)
+
+									fmt.Println(*&userProfile.Handle + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + ":" + pst.Text + " : " + url)
 								} else {
 									fmt.Println(pst.Text)
 								}
@@ -180,15 +189,16 @@ var Firehose = &cli.Command{
 				return nil
 			},
 			RepoInfo: func(info *comatproto.SyncSubscribeRepos_Info) error {
-				if jsonfmt {
-					b, err := json.Marshal(info)
-					if err != nil {
-						return err
-					}
-					fmt.Println(string(b))
-				} else {
-					fmt.Printf("INFO: %s: %v\n", info.Name, info.Message)
+
+				b, err := json.Marshal(info)
+				if err != nil {
+					return err
 				}
+				fmt.Println(string(b))
+
+				// } else {
+				// 	fmt.Printf("INFO: %s: %v\n", info.Name, info.Message)
+				// }
 
 				return nil
 			},
