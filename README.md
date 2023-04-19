@@ -16,4 +16,10 @@ go run . firehose -auth someusername.bsky.social superpassword
 After you've already run it once, it will save your credentials in a file called .bsky.auth in your home directory.
 
 go run . firehose -auth
-```
+
+
+# Acknowledgements
+
+[Bluesky Social Github](https://github.com/bluesky-social/)
+
+
