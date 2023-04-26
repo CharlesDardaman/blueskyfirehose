@@ -15,6 +15,7 @@ import (
 	"github.com/CharlesDardaman/blueskyfirehose/diskutil"
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	appbsky "github.com/bluesky-social/indigo/api/bsky"
+	"github.com/bluesky-social/indigo/api/label"
 	cliutil "github.com/bluesky-social/indigo/cmd/gosky/util"
 	"github.com/bluesky-social/indigo/events"
 	lexutil "github.com/bluesky-social/indigo/lex/util"
@@ -36,6 +37,10 @@ var Firehose = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name: "authed", //if you want to be authed or not.
+		},
+		&cli.Int64Flag{
+			Name:  "mf", //min follower count to print
+			Value: 0,
 		},
 	},
 	Action: func(cctx *cli.Context) error {
@@ -169,9 +174,13 @@ var Firehose = &cli.Command{
 
 									//fmt.Println(string(b))
 
-									url := "https://staging.bsky.app/profile/" + userProfile.Handle + "/post/" + path.Base(op.Path)
+									if *userProfile.FollowersCount >= int64(cctx.Int("mf")) {
 
-									fmt.Println(userProfile.Handle + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + ":" + pst.Text + " : " + url)
+										url := "https://staging.bsky.app/profile/" + userProfile.Handle + "/post/" + path.Base(op.Path)
+
+										fmt.Println(userProfile.Handle + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + ":" + pst.Text)
+										fmt.Println(url)
+									}
 								} else {
 									fmt.Println(pst.Text)
 								}
@@ -188,6 +197,14 @@ var Firehose = &cli.Command{
 
 				return nil
 			},
+			RepoHandle: func(handle *comatproto.SyncSubscribeRepos_Handle) error {
+				b, err := json.Marshal(handle)
+				if err != nil {
+					return err
+				}
+				fmt.Println(string(b))
+				return nil
+			},
 			RepoInfo: func(info *comatproto.SyncSubscribeRepos_Info) error {
 
 				b, err := json.Marshal(info)
@@ -202,7 +219,39 @@ var Firehose = &cli.Command{
 
 				return nil
 			},
-			// TODO: all the other event types
+			RepoMigrate: func(mig *comatproto.SyncSubscribeRepos_Migrate) error {
+				b, err := json.Marshal(mig)
+				if err != nil {
+					return err
+				}
+				fmt.Println(string(b))
+				return nil
+			},
+			RepoTombstone: func(tomb *comatproto.SyncSubscribeRepos_Tombstone) error {
+				b, err := json.Marshal(tomb)
+				if err != nil {
+					return err
+				}
+				fmt.Println(string(b))
+				return nil
+			},
+			LabelLabels: func(labels *label.SubscribeLabels_Labels) error {
+				b, err := json.Marshal(labels)
+				if err != nil {
+					return err
+				}
+				fmt.Println(string(b))
+				return nil
+			},
+			LabelInfo: func(info *label.SubscribeLabels_Info) error {
+				b, err := json.Marshal(info)
+				if err != nil {
+					return err
+				}
+				fmt.Println(string(b))
+				return nil
+			},
+
 			Error: func(errf *events.ErrorFrame) error {
 				return fmt.Errorf("error frame: %s: %s", errf.Error, errf.Message)
 			},
