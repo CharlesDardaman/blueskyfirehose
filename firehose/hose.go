@@ -111,6 +111,7 @@ var Firehose = &cli.Command{
 						ek := repomgr.EventKind(op.Action)
 						switch ek {
 						case repomgr.EvtKindCreateRecord, repomgr.EvtKindUpdateRecord:
+							//fmt.Println("got record", op.Path, op.Cid, op.Action, evt.Seq, evt.Repo)
 							rc, rec, err := rr.GetRecord(ctx, op.Path)
 							if err != nil {
 								e := fmt.Errorf("getting record %s (%s) within seq %d for %s: %w", op.Path, *op.Cid, evt.Seq, evt.Repo, err)
@@ -139,66 +140,104 @@ var Firehose = &cli.Command{
 							if err != nil {
 								fmt.Println(err)
 							}
+
+							var userProfile *appbsky.ActorDefs_ProfileViewDetailed
+							var replyUserProfile *appbsky.ActorDefs_ProfileViewDetailed
+							if cctx.Bool("authed") {
+								userProfile, err = appbsky.ActorGetProfile(context.TODO(), xrpcc, evt.Repo)
+								if err != nil {
+									fmt.Println(err)
+
+									//try a refresh
+									sess, err := refreshSession(cctx)
+									if err == nil {
+										err = diskutil.WriteStructToDisk(sess, authFile)
+										if err != nil {
+											return err
+										}
+										//reset xrpcc
+										xrpcc, err = cliutil.GetXrpcClient(cctx, true)
+										if err != nil {
+											return err
+										}
+
+									}
+
+								}
+								if pst.Reply != nil {
+									replyUserProfile, err = appbsky.ActorGetProfile(context.TODO(), xrpcc, strings.Split(pst.Reply.Parent.Uri, "/")[2])
+									if err != nil {
+										fmt.Println(err)
+									}
+								}
+
+							}
+
 							//Handle if its a post
 							if pst.LexiconTypeID == "app.bsky.feed.post" {
 
-								var userProfile *appbsky.ActorDefs_ProfileViewDetailed
-								var replyUserProfile *appbsky.ActorDefs_ProfileViewDetailed
-								if cctx.Bool("authed") {
-									userProfile, err = appbsky.ActorGetProfile(context.TODO(), xrpcc, evt.Repo)
-									if err != nil {
-										fmt.Println(err)
+								PrintPost(cctx, pst, userProfile, replyUserProfile, nil, op.Path)
 
-										//try a refresh
-										sess, err := refreshSession(cctx)
-										if err == nil {
-											err = diskutil.WriteStructToDisk(sess, authFile)
-											if err != nil {
-												return err
-											}
-											//reset xrpcc
-											xrpcc, err = cliutil.GetXrpcClient(cctx, true)
-											if err != nil {
-												return err
-											}
+							} else if pst.LexiconTypeID == "app.bsky.feed.like" {
 
-										}
+								// fmt.Println("Like")
+								// fmt.Println(string(b))
 
-									}
-									if pst.Reply != nil {
-										replyUserProfile, err = appbsky.ActorGetProfile(context.TODO(), xrpcc, strings.Split(pst.Reply.Parent.Uri, "/")[2])
-										if err != nil {
-											fmt.Println(err)
-										}
-									}
+								var like = appbsky.FeedLike{}
+								err = json.Unmarshal(b, &like)
+								if err != nil {
+									fmt.Println(err)
+								}
+								// fmt.Println(like)
+								// fmt.Println(like.Subject)
+
+								// fmt.Println(like.Subject.Uri[strings.LastIndex(like.Subject.Uri[:strings.LastIndex(like.Subject.Uri, "/")], "/")+1:])
+
+								// fmt.Println(like.Subject.Uri[strings.LastIndex(like.Subject.Uri, "/")+1:])
+
+								likedDid := strings.Split(like.Subject.Uri, "/")[2]
+
+								rrb, err := comatproto.SyncGetRepo(ctx, xrpcc, likedDid, "", "")
+								if err != nil {
+									fmt.Println(err)
+									continue
 								}
 
-								//Make the URL to link
-
-								//Try to use the display name and follower count if we can get it
-								if userProfile != nil && userProfile.FollowersCount != nil {
-
-									//https://staging.bsky.app/profile/lastnpcalex.com/post/3jtqdpnuptv26
-
-									//fmt.Println(string(b))
-
-									if *userProfile.FollowersCount >= int64(cctx.Int("mf")) {
-
-										var rply string
-										if pst.Reply != nil && replyUserProfile != nil && replyUserProfile.FollowersCount != nil {
-											rply = " --> " + replyUserProfile.Handle + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + "\n" //+ "https://staging.bsky.app/profile/" + strings.Split(pst.Reply.Parent.Uri, "/")[2] + "/post/" + path.Base(pst.Reply.Parent.Uri) + "\n"
-										} else {
-											rply = ":\n"
-										}
-
-										url := "https://staging.bsky.app/profile/" + userProfile.Handle + "/post/" + path.Base(op.Path)
-
-										fmt.Println(userProfile.Handle + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + rply + pst.Text)
-										fmt.Println(url + "\n")
-									}
-								} else {
-									fmt.Println(pst.Text)
+								rr, err := repo.ReadRepoFromCar(ctx, bytes.NewReader(rrb))
+								if err != nil {
+									fmt.Println(err)
+									continue
 								}
+
+								_, rec, err := rr.GetRecord(ctx, like.Subject.Uri[strings.LastIndex(like.Subject.Uri[:strings.LastIndex(like.Subject.Uri, "/")], "/")+1:])
+								if err != nil {
+									log.Error(err)
+									return nil
+								}
+
+								//fmt.Println("got record", rc, rec)
+								banana := lexutil.LexiconTypeDecoder{
+									Val: rec,
+								}
+
+								var pst = appbsky.FeedPost{}
+								b, err := banana.MarshalJSON()
+								if err != nil {
+									fmt.Println(err)
+								}
+
+								err = json.Unmarshal(b, &pst)
+								if err != nil {
+									fmt.Println(err)
+								}
+
+								likedUserProfile, err := appbsky.ActorGetProfile(context.TODO(), xrpcc, likedDid)
+								if err != nil {
+									fmt.Println(err)
+								}
+
+								PrintPost(cctx, pst, likedUserProfile, nil, userProfile, like.Subject.Uri[strings.LastIndex(like.Subject.Uri, "/")+1:])
+
 							}
 
 						case repomgr.EvtKindDeleteRecord:
@@ -316,4 +355,31 @@ func refreshSession(cctx *cli.Context) ([]byte, error) {
 
 	return json.Marshal(nauth)
 
+}
+
+func PrintPost(cctx *cli.Context, pst appbsky.FeedPost, userProfile, replyUserProfile, likingUserProfile *appbsky.ActorDefs_ProfileViewDetailed, postPath string) {
+	if userProfile != nil && userProfile.FollowersCount != nil {
+
+		//Try to use the display name and follower count if we can get it
+
+		if *userProfile.FollowersCount >= int64(cctx.Int("mf")) {
+
+			var rply, likedTxt string
+			if pst.Reply != nil && replyUserProfile != nil && replyUserProfile.FollowersCount != nil {
+				rply = " ➡️ " + replyUserProfile.Handle + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + "\n" //+ "https://staging.bsky.app/profile/" + strings.Split(pst.Reply.Parent.Uri, "/")[2] + "/post/" + path.Base(pst.Reply.Parent.Uri) + "\n"
+			} else if likingUserProfile != nil {
+				likedTxt = likingUserProfile.Handle + ":" + strconv.Itoa(int(*likingUserProfile.FollowersCount)) + " ❤️ "
+				rply = ":\n"
+			} else {
+				rply = ":\n"
+			}
+
+			url := "https://staging.bsky.app/profile/" + userProfile.Handle + "/post/" + path.Base(postPath)
+
+			fmt.Println(likedTxt + userProfile.Handle + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + rply + pst.Text)
+			fmt.Println(url + "\n")
+		}
+	} else {
+		fmt.Println(pst.Text)
+	}
 }
