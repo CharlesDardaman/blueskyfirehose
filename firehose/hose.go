@@ -202,6 +202,7 @@ var Firehose = &cli.Command{
 				if err != nil {
 					return err
 				}
+				fmt.Println("RepoHandle")
 				fmt.Println(string(b))
 				return nil
 			},
@@ -211,6 +212,7 @@ var Firehose = &cli.Command{
 				if err != nil {
 					return err
 				}
+				fmt.Println("RepoInfo")
 				fmt.Println(string(b))
 
 				// } else {
@@ -224,6 +226,7 @@ var Firehose = &cli.Command{
 				if err != nil {
 					return err
 				}
+				fmt.Println("RepoMigrate")
 				fmt.Println(string(b))
 				return nil
 			},
@@ -232,6 +235,7 @@ var Firehose = &cli.Command{
 				if err != nil {
 					return err
 				}
+				fmt.Println("RepoTombstone")
 				fmt.Println(string(b))
 				return nil
 			},
@@ -240,6 +244,7 @@ var Firehose = &cli.Command{
 				if err != nil {
 					return err
 				}
+				fmt.Println("LabelLabels")
 				fmt.Println(string(b))
 				return nil
 			},
@@ -248,6 +253,7 @@ var Firehose = &cli.Command{
 				if err != nil {
 					return err
 				}
+				fmt.Println("LabelInfo")
 				fmt.Println(string(b))
 				return nil
 			},
