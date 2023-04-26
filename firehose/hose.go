@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"path"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -176,9 +177,14 @@ var Firehose = &cli.Command{
 
 									if *userProfile.FollowersCount >= int64(cctx.Int("mf")) {
 
+										var rply string
+										if pst.Reply != nil {
+											rply = "Replying to: " + "https://staging.bsky.app/profile/" + strings.Split(pst.Reply.Parent.Uri, "/")[2] + "/post/" + path.Base(pst.Reply.Parent.Uri) + "\n"
+										}
+
 										url := "https://staging.bsky.app/profile/" + userProfile.Handle + "/post/" + path.Base(op.Path)
 
-										fmt.Println(userProfile.Handle + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + ":\n" + pst.Text)
+										fmt.Println(userProfile.Handle + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + ":\n" + rply + pst.Text)
 										fmt.Println(url + "\n")
 									}
 								} else {
