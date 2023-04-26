@@ -186,7 +186,7 @@ var Firehose = &cli.Command{
 
 										var rply string
 										if pst.Reply != nil && replyUserProfile != nil && replyUserProfile.FollowersCount != nil {
-											rply = "-->" + replyUserProfile.Handle + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + "\n" //+ "https://staging.bsky.app/profile/" + strings.Split(pst.Reply.Parent.Uri, "/")[2] + "/post/" + path.Base(pst.Reply.Parent.Uri) + "\n"
+											rply = " --> " + replyUserProfile.Handle + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + "\n" //+ "https://staging.bsky.app/profile/" + strings.Split(pst.Reply.Parent.Uri, "/")[2] + "/post/" + path.Base(pst.Reply.Parent.Uri) + "\n"
 										} else {
 											rply = ":\n"
 										}
