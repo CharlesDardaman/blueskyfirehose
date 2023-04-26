@@ -178,8 +178,8 @@ var Firehose = &cli.Command{
 
 										url := "https://staging.bsky.app/profile/" + userProfile.Handle + "/post/" + path.Base(op.Path)
 
-										fmt.Println(userProfile.Handle + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + ":" + pst.Text)
-										fmt.Println(url)
+										fmt.Println(userProfile.Handle + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + ":\n" + pst.Text)
+										fmt.Println(url + "\n")
 									}
 								} else {
 									fmt.Println(pst.Text)
