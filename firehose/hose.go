@@ -143,6 +143,7 @@ var Firehose = &cli.Command{
 							if pst.LexiconTypeID == "app.bsky.feed.post" {
 
 								var userProfile *appbsky.ActorDefs_ProfileViewDetailed
+								var replyUserProfile *appbsky.ActorDefs_ProfileViewDetailed
 								if cctx.Bool("authed") {
 									userProfile, err = appbsky.ActorGetProfile(context.TODO(), xrpcc, evt.Repo)
 									if err != nil {
@@ -164,12 +165,18 @@ var Firehose = &cli.Command{
 										}
 
 									}
+									if pst.Reply != nil {
+										replyUserProfile, err = appbsky.ActorGetProfile(context.TODO(), xrpcc, strings.Split(pst.Reply.Parent.Uri, "/")[2])
+										if err != nil {
+											fmt.Println(err)
+										}
+									}
 								}
 
 								//Make the URL to link
 
 								//Try to use the display name and follower count if we can get it
-								if userProfile != nil && userProfile.DisplayName != nil && userProfile.FollowersCount != nil {
+								if userProfile != nil && userProfile.FollowersCount != nil {
 
 									//https://staging.bsky.app/profile/lastnpcalex.com/post/3jtqdpnuptv26
 
@@ -178,13 +185,15 @@ var Firehose = &cli.Command{
 									if *userProfile.FollowersCount >= int64(cctx.Int("mf")) {
 
 										var rply string
-										if pst.Reply != nil {
-											rply = "Replying to: " + "https://staging.bsky.app/profile/" + strings.Split(pst.Reply.Parent.Uri, "/")[2] + "/post/" + path.Base(pst.Reply.Parent.Uri) + "\n"
+										if pst.Reply != nil && replyUserProfile != nil && replyUserProfile.FollowersCount != nil {
+											rply = "-->" + replyUserProfile.Handle + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + "\n" //+ "https://staging.bsky.app/profile/" + strings.Split(pst.Reply.Parent.Uri, "/")[2] + "/post/" + path.Base(pst.Reply.Parent.Uri) + "\n"
+										} else {
+											rply = ":\n"
 										}
 
 										url := "https://staging.bsky.app/profile/" + userProfile.Handle + "/post/" + path.Base(op.Path)
 
-										fmt.Println(userProfile.Handle + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + ":\n" + rply + pst.Text)
+										fmt.Println(userProfile.Handle + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + rply + pst.Text)
 										fmt.Println(url + "\n")
 									}
 								} else {
