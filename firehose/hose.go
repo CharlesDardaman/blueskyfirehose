@@ -43,6 +43,9 @@ var Firehose = &cli.Command{
 			Name:  "mf", //min follower count to print
 			Value: 0,
 		},
+		&cli.BoolFlag{
+			Name: "likes", //if you want likes to show or not
+		},
 	},
 	Action: func(cctx *cli.Context) error {
 		ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT)
@@ -178,7 +181,7 @@ var Firehose = &cli.Command{
 
 								PrintPost(cctx, pst, userProfile, replyUserProfile, nil, op.Path)
 
-							} else if pst.LexiconTypeID == "app.bsky.feed.like" {
+							} else if pst.LexiconTypeID == "app.bsky.feed.like" && cctx.Bool("likes") {
 
 								// fmt.Println("Like")
 								// fmt.Println(string(b))
@@ -362,7 +365,18 @@ func PrintPost(cctx *cli.Context, pst appbsky.FeedPost, userProfile, replyUserPr
 
 		//Try to use the display name and follower count if we can get it
 
+		var enoughfollowers bool
 		if *userProfile.FollowersCount >= int64(cctx.Int("mf")) {
+			enoughfollowers = true
+		}
+		if likingUserProfile != nil {
+			if *likingUserProfile.FollowersCount >= int64(cctx.Int("mf")) {
+				enoughfollowers = true
+			}
+
+		}
+
+		if enoughfollowers {
 
 			var rply, likedTxt string
 			if pst.Reply != nil && replyUserProfile != nil && replyUserProfile.FollowersCount != nil {
