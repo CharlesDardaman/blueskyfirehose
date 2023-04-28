@@ -4,6 +4,18 @@ Simple golang firehose for Bluesky.
 
 # Usage
 
+--mf <int> 
+    Only show posts by users with a minimum follower count of <int>
+
+--likes
+    Show likes as well as posts
+
+--help / -h 
+    Show command help
+
+Examples:
+go run . firehose --mf 100 --likes # show posts and likes by users with a minimum of 100 followers
+
 ## Without Authentication
 
 go run . firehose
