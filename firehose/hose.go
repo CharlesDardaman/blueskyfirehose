@@ -62,6 +62,8 @@ var Firehose = &cli.Command{
 			if err != nil {
 				return err
 			}
+
+			// Saves the bsky.auth file
 			err = diskutil.WriteStructToDisk(sess, authFile)
 			if err != nil {
 				return err
