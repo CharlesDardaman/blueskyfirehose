@@ -2,6 +2,7 @@ package diskutil
 
 import (
 	"encoding/json"
+	"log"
 	"os"
 )
 
@@ -36,4 +37,16 @@ func FileExists(filename string) bool {
 		return false
 	}
 	return false
+}
+
+func SavePostToDisk(fmtdstring string) {
+	f, err := os.OpenFile("posts.log",
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+	if _, err := f.WriteString(fmtdstring + "\n\n"); err != nil {
+		log.Println(err)
+	}
 }

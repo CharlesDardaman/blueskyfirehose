@@ -46,6 +46,9 @@ var Firehose = &cli.Command{
 		&cli.BoolFlag{
 			Name: "likes", //if you want likes to show or not
 		},
+		&cli.BoolFlag{
+			Name: "save",
+		},
 	},
 	Action: func(cctx *cli.Context) error {
 		ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT)
@@ -62,6 +65,8 @@ var Firehose = &cli.Command{
 			if err != nil {
 				return err
 			}
+
+			// Saves the bsky.auth file
 			err = diskutil.WriteStructToDisk(sess, authFile)
 			if err != nil {
 				return err
@@ -102,9 +107,14 @@ var Firehose = &cli.Command{
 			_ = con.Close()
 		}()
 
+		// HandleRepoStream is the main beef of this function
+		// It will run on each event and switch on the event type and run the callbacks passed to it in
+		// events.RepoStreamCallbacks
+
 		return events.HandleRepoStream(ctx, con, &events.RepoStreamCallbacks{
 			RepoCommit: func(evt *comatproto.SyncSubscribeRepos_Commit) error {
 
+				// Returns a... readrepo?
 				rr, err := repo.ReadRepoFromCar(ctx, bytes.NewReader(evt.Blocks))
 				if err != nil {
 					fmt.Println(err)
@@ -389,11 +399,16 @@ func PrintPost(cctx *cli.Context, pst appbsky.FeedPost, userProfile, replyUserPr
 			}
 
 			url := "https://staging.bsky.app/profile/" + userProfile.Handle + "/post/" + path.Base(postPath)
-
-			fmt.Println(likedTxt + userProfile.Handle + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + rply + pst.Text)
-			fmt.Println(url + "\n")
+			fmtdstring := likedTxt + userProfile.Handle + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + rply + pst.Text + "\n" + url + "\n"
+			fmt.Println(fmtdstring)
+			if cctx.Bool("save") {
+				go diskutil.SavePostToDisk(fmtdstring)
+			}
 		}
 	} else {
 		fmt.Println(pst.Text)
+		if cctx.Bool("save") {
+			go diskutil.SavePostToDisk(pst.Text)
+		}
 	}
 }
