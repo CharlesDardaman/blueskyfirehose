@@ -38,8 +38,9 @@ If you have a custom domain, use the email address you used to sign up Bluesky i
 
 After you've already run it once, it will save your credentials in a file called .bsky.auth in your home directory.
 
+```sh
 go run . firehose -authed
-
+```
 
 # Acknowledgements
 
