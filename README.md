@@ -14,20 +14,31 @@ Simple golang firehose for Bluesky.
     Show command help
 
 Examples:
+    
+```sh
 go run . firehose --mf 100 --likes # show posts and likes by users with a minimum of 100 followers
-
+```
+    
 ## Without Authentication
-
+    
+```sh
 go run . firehose
+```
 
 ## With Authentication
-If it's the first time you need to enter your credentials.
+If it's the first time you need to enter your credentials. An App Password can be created at https://bsky.app/settings/app-passwords
 
-go run . firehose -auth someusername.bsky.social superpassword
+```sh
+go run . firehose -authed someusername.bsky.social superpassword
+```
+    
+If you have a custom domain, use the email address you used to sign up Bluesky instead. 
+    
+
 
 After you've already run it once, it will save your credentials in a file called .bsky.auth in your home directory.
 
-go run . firehose -auth
+go run . firehose -authed
 
 
 # Acknowledgements
