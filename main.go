@@ -17,7 +17,7 @@ func run(args []string) {
 	app := cli.App{
 		Name:    "firehose",
 		Usage:   "simple firehose client for bluesky",
-		Version: "0.1",
+		Version: "0.2",
 	}
 
 	app.Flags = []cli.Flag{

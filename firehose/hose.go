@@ -17,11 +17,12 @@ import (
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	appbsky "github.com/bluesky-social/indigo/api/bsky"
 	"github.com/bluesky-social/indigo/api/label"
-	cliutil "github.com/bluesky-social/indigo/cmd/gosky/util"
 	"github.com/bluesky-social/indigo/events"
+	"github.com/bluesky-social/indigo/events/schedulers/sequential"
 	lexutil "github.com/bluesky-social/indigo/lex/util"
 	"github.com/bluesky-social/indigo/repo"
 	"github.com/bluesky-social/indigo/repomgr"
+	"github.com/bluesky-social/indigo/util/cliutil"
 	"github.com/bluesky-social/indigo/xrpc"
 	logging "github.com/ipfs/go-log"
 
@@ -111,7 +112,7 @@ var Firehose = &cli.Command{
 		// It will run on each event and switch on the event type and run the callbacks passed to it in
 		// events.RepoStreamCallbacks
 
-		return events.HandleRepoStream(ctx, con, &events.RepoStreamCallbacks{
+		rscb := &events.RepoStreamCallbacks{
 			RepoCommit: func(evt *comatproto.SyncSubscribeRepos_Commit) error {
 
 				// Returns a... readrepo?
@@ -328,7 +329,10 @@ var Firehose = &cli.Command{
 			Error: func(errf *events.ErrorFrame) error {
 				return fmt.Errorf("error frame: %s: %s", errf.Error, errf.Message)
 			},
-		})
+		}
+
+		seqScheduler := sequential.NewScheduler(con.RemoteAddr().String(), rscb.EventHandler)
+		return events.HandleRepoStream(ctx, con, seqScheduler)
 	},
 }
 
