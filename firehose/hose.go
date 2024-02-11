@@ -16,7 +16,6 @@ import (
 	"github.com/CharlesDardaman/blueskyfirehose/diskutil"
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	appbsky "github.com/bluesky-social/indigo/api/bsky"
-	"github.com/bluesky-social/indigo/api/label"
 	"github.com/bluesky-social/indigo/events"
 	"github.com/bluesky-social/indigo/events/schedulers/sequential"
 	lexutil "github.com/bluesky-social/indigo/lex/util"
@@ -75,7 +74,7 @@ var Firehose = &cli.Command{
 
 		}
 
-		arg := "wss://bsky.social/xrpc/com.atproto.sync.subscribeRepos"
+		arg := "wss://bsky.network/xrpc/com.atproto.sync.subscribeRepos"
 
 		//Set if empty
 		if cctx.String("pds-host") == "" {
@@ -211,7 +210,7 @@ var Firehose = &cli.Command{
 
 								likedDid := strings.Split(like.Subject.Uri, "/")[2]
 
-								rrb, err := comatproto.SyncGetRepo(ctx, xrpcc, likedDid, "", "")
+								rrb, err := comatproto.SyncGetRepo(ctx, xrpcc, likedDid, "")
 								if err != nil {
 									fmt.Println(err)
 									continue
@@ -307,7 +306,7 @@ var Firehose = &cli.Command{
 				fmt.Println(string(b))
 				return nil
 			},
-			LabelLabels: func(labels *label.SubscribeLabels_Labels) error {
+			LabelLabels: func(labels *comatproto.LabelSubscribeLabels_Labels) error {
 				b, err := json.Marshal(labels)
 				if err != nil {
 					return err
@@ -316,7 +315,7 @@ var Firehose = &cli.Command{
 				fmt.Println(string(b))
 				return nil
 			},
-			LabelInfo: func(info *label.SubscribeLabels_Info) error {
+			LabelInfo: func(info *comatproto.LabelSubscribeLabels_Info) error {
 				b, err := json.Marshal(info)
 				if err != nil {
 					return err
@@ -402,7 +401,7 @@ func PrintPost(cctx *cli.Context, pst appbsky.FeedPost, userProfile, replyUserPr
 				rply = ":\n"
 			}
 
-			url := "https://staging.bsky.app/profile/" + userProfile.Handle + "/post/" + path.Base(postPath)
+			url := "https://bsky.app/profile/" + userProfile.Handle + "/post/" + path.Base(postPath)
 			fmtdstring := likedTxt + userProfile.Handle + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + rply + pst.Text + "\n" + url + "\n"
 			fmt.Println(fmtdstring)
 			if cctx.Bool("save") {
