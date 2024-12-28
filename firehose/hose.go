@@ -393,7 +393,7 @@ func PrintPost(cctx *cli.Context, pst appbsky.FeedPost, userProfile, replyUserPr
 
 			var rply, likedTxt string
 			if pst.Reply != nil && replyUserProfile != nil && replyUserProfile.FollowersCount != nil {
-				rply = " ➡️ " + replyUserProfile.Handle + ":" + strconv.Itoa(int(*userProfile.FollowersCount)) + "\n" //+ "https://staging.bsky.app/profile/" + strings.Split(pst.Reply.Parent.Uri, "/")[2] + "/post/" + path.Base(pst.Reply.Parent.Uri) + "\n"
+				rply = " ➡️ " + replyUserProfile.Handle + ":" + strconv.Itoa(int(*replyUserProfile.FollowersCount)) + "\n" //+ "https://staging.bsky.app/profile/" + strings.Split(pst.Reply.Parent.Uri, "/")[2] + "/post/" + path.Base(pst.Reply.Parent.Uri) + "\n"
 			} else if likingUserProfile != nil {
 				likedTxt = likingUserProfile.Handle + ":" + strconv.Itoa(int(*likingUserProfile.FollowersCount)) + " ❤️ "
 				rply = ":\n"
